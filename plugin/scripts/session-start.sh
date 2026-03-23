@@ -62,6 +62,18 @@ done < <(git -C "$CWD" branch --merged HEAD 2>/dev/null | grep -v '^\*')
   cat "$BRANCH_FILE"
 
   printf '\n---\n\n'
+  printf '## Session Startup\n\n'
+  printf 'At the very start of your **first response** this session, output this block verbatim (before anything else):\n\n'
+  printf '```\n'
+  printf '[branch-memory] branch : %s\n' "$BRANCH"
+  if [ ${#CONSOLIDATED[@]} -gt 0 ]; then
+    for B in "${CONSOLIDATED[@]}"; do
+      printf '[branch-memory] merged  : %s → global.md\n' "$B"
+    done
+  fi
+  printf '[branch-memory] global  : %s\n' "$GLOBAL_FILE"
+  printf '[branch-memory] branch  : %s\n' "$BRANCH_FILE"
+  printf '```\n\n'
   printf '## Memory Protocol\n\n'
   printf 'Update memory **proactively during this session** — no need to be asked.\n\n'
   printf '| Situation | File to update |\n'
