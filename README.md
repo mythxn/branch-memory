@@ -1,6 +1,6 @@
 # branch-memory
 
-A Claude Code plugin that scopes `MEMORY.md` per git branch. Each branch gets its own isolated session context, with a shared space for cross-branch notes.
+A Claude Code plugin that scopes `MEMORY.md` per git branch. Fully automatic — open Claude and work; memory captures itself.
 
 ## Install
 
@@ -8,72 +8,77 @@ A Claude Code plugin that scopes `MEMORY.md` per git branch. Each branch gets it
 claude plugin install branch-memory@mythxn
 ```
 
-## What it does
+## How it works
 
-On every session start, the plugin:
+**You just open Claude and work. The plugin handles everything else.**
 
-1. Detects the current git branch in your working directory
-2. Assembles a `MEMORY.md` from two sources:
-   - **`global.md`** — notes that apply to the entire project, regardless of branch
-   - **`branches/<branch>.md`** — notes specific to the current branch
-3. Writes the combined result to `MEMORY.md`, which Claude Code automatically loads as context
+On every `SessionStart`, the plugin:
 
-Non-git folders are skipped cleanly — the plugin exits without touching anything.
+1. **Detects the git branch** in your working directory
+2. **Consolidates merged branches** — if any branches have been merged into the current one, their notes are automatically folded into `global.md` and the branch files are removed
+3. **Assembles `MEMORY.md`** from `global.md` + `branches/<branch>.md`
+4. **Injects a Memory Protocol** into `MEMORY.md` — Claude reads this and autonomously writes notes during the session without being asked
+
+On `SessionStart` of the *next* session, step 3 picks up whatever Claude wrote — your memory grows automatically.
+
+Non-git folders are skipped cleanly.
 
 ## Memory layout
 
 ```
 ~/.claude/projects/<project-key>/memory/
-├── global.md                  ← Cross-branch notes (edit this directly)
+├── global.md                  ← Cross-branch notes (auto-written by Claude)
 ├── branches/
-│   ├── main.md                ← Notes for the main branch
+│   ├── main.md                ← Notes for main (auto-written by Claude)
 │   ├── feat_my-feature.md     ← Notes for feat/my-feature (/ → _ in filename)
 │   └── ...
 └── MEMORY.md                  ← Auto-generated on each SessionStart (do not edit)
 ```
 
-## How to write notes
+## What Claude captures automatically
 
-Edit the source files directly — never edit `MEMORY.md` (it gets overwritten on each session start).
+The Memory Protocol (injected into every `MEMORY.md`) tells Claude to write proactively:
 
-**Branch-specific notes** (current branch only):
-```bash
-# Edit from inside your repo
-$EDITOR ~/.claude/projects/$(pwd | tr '/' '-')/memory/branches/$(git rev-parse --abbrev-ref HEAD | tr '/' '_').md
+| Situation | Where |
+|-----------|-------|
+| Bug fixed, feature shipped, decision made, TODO left | `branches/<branch>.md` |
+| Architecture insight, key path, project-wide pattern | `global.md` |
+
+Claude uses its own Edit/Write tools to append notes to those files during the session.
+
+## Merge consolidation
+
+When you switch to a branch that has other branches merged into it, the plugin detects the merged branches, moves their memory files into `global.md`, and removes the stale branch files — automatically.
+
+```
+feat/my-feature merged into main
+    ↓
+SessionStart on main
+    ↓
+branches/feat_my-feature.md → appended to global.md under "Consolidated from `feat/my-feature`"
+branches/feat_my-feature.md → deleted
 ```
 
-**Global notes** (all branches):
-```bash
-$EDITOR ~/.claude/projects/$(pwd | tr '/' '-')/memory/global.md
-```
-
-Or ask Claude: *"Remember X for this branch"* / *"Remember X globally"* — Claude will write to the right file.
-
-## Behavior
+## Behavior matrix
 
 | Scenario | Behavior |
 |----------|----------|
 | Git repo, any branch | Generates branch-scoped `MEMORY.md` |
 | New branch (first time) | Creates empty branch file, generates `MEMORY.md` |
+| Branch merged into current | Branch notes consolidated into `global.md` |
 | Non-git folder | Exits cleanly — `MEMORY.md` untouched |
-| Different project | Uses that project's own memory directory |
 | `global.md` missing | Auto-creates with placeholder text |
 
-## Generated MEMORY.md format
+## Manual notes
 
-```markdown
-<!-- AUTO-GENERATED: do not edit directly -->
-<!-- Current branch: feat/my-feature -->
-<!-- Global notes  → memory/global.md -->
-<!-- Branch notes  → memory/branches/feat_my-feature.md -->
+You can still write notes manually — Claude will also do it automatically, but you can always:
 
-# Global Notes
-(Cross-branch notes go here)
+```bash
+# Branch-specific
+$EDITOR ~/.claude/projects/$(pwd | tr '/' '-')/memory/branches/$(git rev-parse --abbrev-ref HEAD | tr '/' '_').md
 
----
-
-# Branch Notes: feat/my-feature
-(Branch-specific notes go here)
+# Global
+$EDITOR ~/.claude/projects/$(pwd | tr '/' '-')/memory/global.md
 ```
 
 ## License

@@ -6,9 +6,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "INPUT=$(cat); CWD=$(echo \"$INPUT\" | jq -r '.cwd // empty' 2>/dev/null); [ -z \"$CWD\" ] && CWD=\"$PWD\"; BRANCH=$(git -C \"$CWD\" rev-parse --abbrev-ref HEAD 2>/dev/null); [ -z \"$BRANCH\" ] && exit 0; BRANCH_SAFE=$(echo \"$BRANCH\" | tr '/' '_'); PROJECT_KEY=$(echo \"$CWD\" | tr '/' '-'); MEMORY_DIR=\"$HOME/.claude/projects/${PROJECT_KEY}/memory\"; mkdir -p \"$MEMORY_DIR/branches\"; BRANCH_FILE=\"$MEMORY_DIR/branches/${BRANCH_SAFE}.md\"; [ -f \"$BRANCH_FILE\" ] || touch \"$BRANCH_FILE\"; GLOBAL_FILE=\"$MEMORY_DIR/global.md\"; [ -f \"$GLOBAL_FILE\" ] || printf '# Global Notes\\n(Cross-branch notes go here)\\n' > \"$GLOBAL_FILE\"; { printf '<!-- AUTO-GENERATED: do not edit directly -->\\n'; printf '<!-- Current branch: %s -->\\n' \"$BRANCH\"; printf '<!-- Global notes  → memory/global.md -->\\n'; printf '<!-- Branch notes  → memory/branches/%s.md -->\\n\\n' \"$BRANCH_SAFE\"; cat \"$GLOBAL_FILE\"; printf '\\n---\\n\\n'; cat \"$BRANCH_FILE\"; } > \"$MEMORY_DIR/MEMORY.md\"",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/session-start.sh\"",
             "statusMessage": "Loading branch memory",
-            "timeout": 5
+            "timeout": 10
           }
         ]
       }
