@@ -10,7 +10,7 @@
   "plugins": [
     {
       "name": "branch-memory",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "source": "./plugin",
       "description": "Scopes MEMORY.md per git branch. Each branch gets isolated session context."
     }
