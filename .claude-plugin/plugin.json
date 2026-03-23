@@ -1,0 +1,4 @@
+{
+  "name": "branch-memory",
+  "description": "Scopes MEMORY.md per git branch. Each branch gets isolated session context."
+}
