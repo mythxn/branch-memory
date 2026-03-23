@@ -25,10 +25,8 @@ GLOBAL_FILE="$MEMORY_DIR/global.md"
 [ -f "$GLOBAL_FILE" ] || printf '# Global Notes\n(Cross-branch notes go here)\n' > "$GLOBAL_FILE"
 
 # ── Merge consolidation ──────────────────────────────────────────────────────
-# For every branch already merged into HEAD, if a memory file exists for it,
-# move its notes into global.md and remove the branch file.
+CONSOLIDATED=()
 while IFS= read -r MERGED; do
-  # Clean up whitespace and skip blank/current branch lines
   MERGED=$(echo "$MERGED" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
   [ -z "$MERGED" ] && continue
   [ "$MERGED" = "$BRANCH" ] && continue
@@ -37,7 +35,6 @@ while IFS= read -r MERGED; do
   MERGED_FILE="$MEMORY_DIR/branches/${MERGED_SAFE}.md"
   [ -f "$MERGED_FILE" ] || continue
 
-  # Only consolidate if the file has real content (not just whitespace)
   CONTENT=$(grep -v '^[[:space:]]*$' "$MERGED_FILE" 2>/dev/null)
   if [ -z "$CONTENT" ]; then
     rm -f "$MERGED_FILE"
@@ -50,6 +47,7 @@ while IFS= read -r MERGED; do
   } >> "$GLOBAL_FILE"
 
   rm -f "$MERGED_FILE"
+  CONSOLIDATED+=("$MERGED")
 done < <(git -C "$CWD" branch --merged HEAD 2>/dev/null | grep -v '^\*')
 
 # ── Assemble MEMORY.md ───────────────────────────────────────────────────────
@@ -73,3 +71,14 @@ done < <(git -C "$CWD" branch --merged HEAD 2>/dev/null | grep -v '^\*')
   printf 'Append with: `- [%s] <one concise sentence>`\n' "$TODAY"
   printf 'Use Edit or Write tools on those files. Never edit MEMORY.md directly.\n'
 } > "$MEMORY_DIR/MEMORY.md"
+
+# ── UI output ─────────────────────────────────────────────────────────────────
+printf '[branch-memory] branch: %s\n' "$BRANCH"
+if [ ${#CONSOLIDATED[@]} -gt 0 ]; then
+  for B in "${CONSOLIDATED[@]}"; do
+    printf '[branch-memory] consolidated merged branch: %s → global.md\n' "$B"
+  done
+fi
+printf '[branch-memory] loaded global : %s\n' "$GLOBAL_FILE"
+printf '[branch-memory] loaded branch : %s\n' "$BRANCH_FILE"
+printf '[branch-memory] context ready : %s\n' "$MEMORY_DIR/MEMORY.md"
