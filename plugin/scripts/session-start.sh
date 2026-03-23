@@ -101,15 +101,16 @@ printf '[branch-memory] global : %s\n' "$GLOBAL_FILE"
 printf '[branch-memory] branch : %s\n' "$BRANCH_FILE"
 
 # /dev/tty → writes directly to terminal, visible before first prompt
-# Subshell + stderr redirect suppresses gracefully when no tty available
+# exec 2>/dev/null inside subshell suppresses all redirect errors silently
 # (IDE mode, CI, piped invocation, etc.)
-_TTY_LINES=""
-_TTY_LINES+="$(printf '\n\033[1;36m[branch-memory]\033[0m \033[1m%s\033[0m\n' "$BRANCH")"
-if [ ${#CONSOLIDATED[@]} -gt 0 ]; then
+(
+  exec 2>/dev/null
+  printf '\n' > /dev/tty
+  printf '\033[1;36m[branch-memory]\033[0m \033[1m%s\033[0m\n' "$BRANCH" > /dev/tty
   for B in "${CONSOLIDATED[@]}"; do
-    _TTY_LINES+="$(printf '\033[1;36m[branch-memory]\033[0m merged: \033[33m%s\033[0m → global.md\n' "$B")"
+    printf '\033[1;36m[branch-memory]\033[0m merged : \033[33m%s\033[0m → global.md\n' "$B" > /dev/tty
   done
-fi
-_TTY_LINES+="$(printf '\033[1;36m[branch-memory]\033[0m global : \033[2m%s\033[0m\n' "$GLOBAL_FILE")"
-_TTY_LINES+="$(printf '\033[1;36m[branch-memory]\033[0m branch : \033[2m%s\033[0m\n' "$BRANCH_FILE")"
-( printf '%s\n' "$_TTY_LINES" > /dev/tty ) 2>/dev/null || true
+  printf '\033[1;36m[branch-memory]\033[0m global : \033[2m%s\033[0m\n' "$GLOBAL_FILE" > /dev/tty
+  printf '\033[1;36m[branch-memory]\033[0m branch : \033[2m%s\033[0m\n' "$BRANCH_FILE" > /dev/tty
+  printf '\n' > /dev/tty
+)
