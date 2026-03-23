@@ -90,12 +90,26 @@ done < <(git -C "$CWD" branch --merged HEAD 2>/dev/null | grep -v '^\*')
 } > "$MEMORY_DIR/MEMORY.md"
 
 # ── UI output ─────────────────────────────────────────────────────────────────
+# stdout → Claude system context (not visible in chat)
 printf '[branch-memory] branch: %s\n' "$BRANCH"
 if [ ${#CONSOLIDATED[@]} -gt 0 ]; then
   for B in "${CONSOLIDATED[@]}"; do
-    printf '[branch-memory] consolidated merged branch: %s → global.md\n' "$B"
+    printf '[branch-memory] consolidated: %s → global.md\n' "$B"
   done
 fi
-printf '[branch-memory] loaded global : %s\n' "$GLOBAL_FILE"
-printf '[branch-memory] loaded branch : %s\n' "$BRANCH_FILE"
-printf '[branch-memory] context ready : %s\n' "$MEMORY_DIR/MEMORY.md"
+printf '[branch-memory] global : %s\n' "$GLOBAL_FILE"
+printf '[branch-memory] branch : %s\n' "$BRANCH_FILE"
+
+# /dev/tty → writes directly to terminal, visible before first prompt
+# Subshell + stderr redirect suppresses gracefully when no tty available
+# (IDE mode, CI, piped invocation, etc.)
+_TTY_LINES=""
+_TTY_LINES+="$(printf '\n\033[1;36m[branch-memory]\033[0m \033[1m%s\033[0m\n' "$BRANCH")"
+if [ ${#CONSOLIDATED[@]} -gt 0 ]; then
+  for B in "${CONSOLIDATED[@]}"; do
+    _TTY_LINES+="$(printf '\033[1;36m[branch-memory]\033[0m merged: \033[33m%s\033[0m → global.md\n' "$B")"
+  done
+fi
+_TTY_LINES+="$(printf '\033[1;36m[branch-memory]\033[0m global : \033[2m%s\033[0m\n' "$GLOBAL_FILE")"
+_TTY_LINES+="$(printf '\033[1;36m[branch-memory]\033[0m branch : \033[2m%s\033[0m\n' "$BRANCH_FILE")"
+( printf '%s\n' "$_TTY_LINES" > /dev/tty ) 2>/dev/null || true
