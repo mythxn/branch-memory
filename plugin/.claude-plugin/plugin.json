@@ -1,0 +1,17 @@
+{
+  "name": "branch-memory",
+  "version": "1.0.0",
+  "description": "Scopes MEMORY.md per git branch. Each branch gets isolated session context.",
+  "author": {
+    "name": "mythxn"
+  },
+  "repository": "https://github.com/mythxn/branch-memory",
+  "license": "MIT",
+  "keywords": [
+    "memory",
+    "context",
+    "git",
+    "branch",
+    "hooks"
+  ]
+}
